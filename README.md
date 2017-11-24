@@ -1,3 +1,7 @@
+PDECollector.jarのダウンロードはここから↓
+[PDECollector.jar][a]
+[a]:https://github.com/Gamu2059/PDECollector/blob/master/PDECollector.jar
+
 # 概要
 複数のpdeファイルを一つにまとめるプログラムです。
 まとめた後のpdeファイルが正常に動作することは確認済みです。
