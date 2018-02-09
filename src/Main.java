@@ -38,12 +38,12 @@ public class Main {
         File savingDir = new File(getCurrentPath() + "/web-export");
         if (savingDir.exists()) {
             CreateSketchDir(savingDir);
+            return;
+        }
+        if (savingDir.mkdir()) {
+            CreateSketchDir(savingDir);
         } else {
-            if (savingDir.mkdir()) {
-                CreateSketchDir(savingDir);
-            } else {
-                ShowFaultMessage("web-export ディレクトリの生成に失敗しました。");
-            }
+            ShowFaultMessage("web-export ディレクトリの生成に失敗しました。");
         }
     }
 
@@ -92,22 +92,28 @@ public class Main {
         try {
             PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sketch), "UTF-8")));
 
-            for (File file : files) {
-                if (sketch.getName().equals(file.getName())) {
-                    pw.println(readAll(file.getPath()));
-                    break;
-                }
-            }
+            printMainFile(sketch, files, pw);
+            printOtherFile(sketch, files, pw);
 
-            for (File file : files) {
-                if (!sketch.getName().equals(file.getName())) {
-                    pw.println(readAll(file.getPath()));
-                }
-            }
             pw.close();
         } catch (IOException e) {
             e.getStackTrace();
             ShowFaultMessage("ファイルの書き込みに失敗しました。");
+        }
+    }
+
+    private void printMainFile(File sketch, File[] files, PrintWriter pw) throws IOException {
+        for (File file : files) {
+            if (!sketch.getName().equals(file.getName())) continue;
+            pw.println(readAll(file.getPath()));
+            break;
+        }
+    }
+
+    private void printOtherFile(File sketch, File[] files, PrintWriter pw) throws IOException {
+        for (File file : files) {
+            if (sketch.getName().equals(file.getName())) continue;
+            pw.println(readAll(file.getPath()));
         }
     }
 
