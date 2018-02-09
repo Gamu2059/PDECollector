@@ -4,34 +4,29 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 
-public class FileUtility {
+class FileUtility {
     private static String FILE_SEPARATOR = "\\";
 
-    public static Boolean directoryCopy(File dirFrom, File dirTo) {
+    static Boolean directoryCopy(File dirFrom, File dirTo) {
         File[] fromFile = dirFrom.listFiles();
-        dirTo = new File(dirTo.getPath() +
-            FILE_SEPARATOR + dirFrom.getName());
+        dirTo = new File(dirTo.getPath() + FILE_SEPARATOR + dirFrom.getName());
 
         dirTo.mkdir();
 
-        if (fromFile != null) {
-
-            for (File f : fromFile) {
-                if (f.isFile()) {
-                    if (!fileCopy(f, dirTo)) {
-                        return false;
-                    }
-                } else {
-                    if (!directoryCopy(f, dirTo)) {
-                        return false;
-                    }
-                }
+        if (fromFile == null) return true;
+        for (File f : fromFile) {
+            if (f.isFile()) {
+                if (!fileCopy(f, dirTo)) return false;
+                continue;
+            }
+            if (!directoryCopy(f, dirTo)) {
+                return false;
             }
         }
         return true;
     }
 
-    public static Boolean fileCopy(File file, File dir) {
+    private static Boolean fileCopy(File file, File dir) {
         File copyFile = new File(dir.getPath() + FILE_SEPARATOR + file.getName());
         FileChannel channelFrom = null;
         FileChannel channelTo = null;
