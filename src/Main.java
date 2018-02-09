@@ -1,11 +1,12 @@
 import javax.swing.*;
 import java.io.*;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.stream.Collectors;
 
 public class Main {
+    private boolean isContainData;
+
     /**
      * 実行ファイルの存在するディレクトリのパスを返す。
      */
@@ -19,40 +20,46 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        new Main();
+    }
+
+    public Main() {
         CreatePDECollectorOutput();
     }
 
-    private static void CreatePDECollectorOutput() {
-        File savingDir = new File(getCurrentPath() + "/PDECollectorOutput");
+    private void CreatePDECollectorOutput() {
+        JFrame f = new JFrame();
+        int result = JOptionPane.showConfirmDialog(f, "dataフォルダを含めますか？");
+        if (result == JOptionPane.CANCEL_OPTION) {
+            ShowFaultMessage("出力をキャンセルします。");
+        }
+        isContainData = result == JOptionPane.YES_OPTION;
+
+        File savingDir = new File(getCurrentPath() + "/web-export");
         if (savingDir.exists()) {
             CreateSketchDir(savingDir);
         } else {
             if (savingDir.mkdir()) {
                 CreateSketchDir(savingDir);
             } else {
-                ShowFaultMessage("PDECollectorOutput ディレクトリの生成に失敗しました。");
+                ShowFaultMessage("web-export ディレクトリの生成に失敗しました。");
             }
         }
     }
 
-    private static void CreateSketchDir(File savingDir) {
-        File sketchDir = new File(savingDir + "/" + savingDir.getParentFile().getName());
-        if (sketchDir.exists()) {
-            CreateSketchFile(sketchDir);
-            CopyDataDir(sketchDir);
-            ShowFaultMessage("スケッチフォルダの生成が完了しました。");
-        } else {
-            if (sketchDir.mkdir()) {
-                CreateSketchFile(sketchDir);
-                CopyDataDir(sketchDir);
-                ShowFaultMessage("スケッチフォルダの生成が完了しました。");
-            } else {
-                ShowFaultMessage("スケッチフォルダの生成に失敗しました。");
+    private void CreateSketchDir(File savingDir) {
+        try {
+            CreateSketchFile(savingDir);
+            if (isContainData) {
+                CopyDataDir(savingDir);
             }
+            ShowFaultMessage("出力が完了しました");
+        } catch (Exception e) {
+            ShowFaultMessage("出力に失敗しました");
         }
     }
 
-    private static void CopyDataDir(File sketchDir) {
+    private void CopyDataDir(File sketchDir) {
         File f = new File(getCurrentPath() + "/data");
         if (!f.exists()) {
             return;
@@ -61,8 +68,9 @@ public class Main {
         FileUtility.directoryCopy(f, sketchDir);
     }
 
-    private static void CreateSketchFile(File sketchDir) {
-        File sketch = new File(sketchDir + "/" + sketchDir.getName() + ".pde");
+    private void CreateSketchFile(File sketchDir) {
+        File current = new File(getCurrentPath());
+        File sketch = new File(sketchDir + "/" + current.getName() + ".pde");
         if (sketch.exists()) {
             sketch.delete();
         }
@@ -77,63 +85,33 @@ public class Main {
         }
     }
 
-    private static void CollectPDEFiles(File sketch) {
+    private void CollectPDEFiles(File sketch) {
         File f = new File(getCurrentPath());
-        File[] files = f.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File _f) {
-                if (_f.isDirectory()) {
-                    return false;
-                }
-                return isContain(_f);
-            }
-
-            /**
-             * 拡張子を抽出する。
-             */
-            public String getExtension(File f) {
-                String ext = null;
-                String filename = f.getName();
-                int dotIndex = filename.lastIndexOf('.');
-
-                if ((dotIndex > 0) && (dotIndex < filename.length() - 1)) {
-                    ext = filename.substring(dotIndex + 1).toLowerCase();
-                }
-                return ext;
-            }
-
-            /**
-             * 適切な拡張子であればtrueを、そうでなければfalseを返す。
-             */
-            boolean isContain(File f) {
-                String ext = getExtension(f);
-                return ext != null && ext.equals("pde");
-            }
-        });
+        File[] files = f.listFiles(new CollectFilter());
 
         try {
             PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sketch), "UTF-8")));
 
             for (File file : files) {
                 if (sketch.getName().equals(file.getName())) {
-                    pw.print(readAll(file.getPath()));
+                    pw.println(readAll(file.getPath()));
                     break;
                 }
             }
 
             for (File file : files) {
                 if (!sketch.getName().equals(file.getName())) {
-                    pw.print(readAll(file.getPath()));
+                    pw.println(readAll(file.getPath()));
                 }
             }
             pw.close();
         } catch (IOException e) {
-            System.out.println(e.getStackTrace());
+            e.getStackTrace();
             ShowFaultMessage("ファイルの書き込みに失敗しました。");
         }
     }
 
-    private static String readAll(final String path) throws IOException {
+    private String readAll(final String path) throws IOException {
         return Files.lines(Paths.get(path), Charset.forName("UTF-8"))
             .collect(Collectors.joining(System.getProperty("line.separator")));
     }
